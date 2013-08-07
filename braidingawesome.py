@@ -4,7 +4,10 @@ from math import sin, cos, pi
 
 def clear():
     for obj in bpy.data.objects:
-        obj.select = True
+        if obj.type not in ('CAMERA', 'LAMP'):
+            obj.select = True
+        else:
+            obj.select = False
     bpy.ops.object.delete()
 
 def nurbs_circle(name, w, h):
@@ -75,7 +78,8 @@ def trefoil(width, segs, a=1, b=3):
         print(i, angle*i)
         yield mul(width, torous(angle * i, a, b))
 
-def braid_strand(length, strands, strandnum, width=1, x0=0, y0=None, ym=.5, xm=1, zm=1, taper=False, ds = None):
+
+def braid_strand(length, strands, strandnum, width=1, x0=0, y0=None, ym=.5, xm=1, zm=1, taper=False, ds = None, resolution=2):
     '''Calculate the points for a single strand of a braid.
     Lots of variables here, feel free to fiddle.
     '''
@@ -91,8 +95,8 @@ def braid_strand(length, strands, strandnum, width=1, x0=0, y0=None, ym=.5, xm=1
     dy = 2 * pi / strands / a
     y0 += strandnum * dy * ym
     i0 = 0 if not taper else - strandnum * (strands + ds) / 4
-    for y in range(length * steps * 2):
-        y *= .5
+    for y in range(length * steps * resolution):
+        y /= resolution
         y += i0
         x = cos(a*y)*xm
         z = sin(b*y)*zm
@@ -134,24 +138,24 @@ def star_pts(r=1, ir=None, points=5, center = (0, 0)):
     return map(zzero, pts)
 
 
-def circlify(points, gap = None):
+def circlify(points, gap = None, circles=1):
     zavg = sum(p[2] for p in points) / len(points)
     # yavg = sum(p[1] for p in points) / len(points)
     x,y,z = points[0]
     ylast = points[-1][1]
-    w = ylast - y
+    w = (ylast - y) / circles
     radius = w / 2 / pi
     center = 0, 0
     if gap is None:
-        gap = w / len(points)
+        gap = (ylast - y) / len(points)
     for a,b,c in points:
         down = (ylast - b) / (w + gap) * 2 * pi
         r = radius + (c - zavg)
         ny, nz = angle_point(center, down, r)
         yield a, ny, nz
 
-def defaultCircle():
-    circle = nurbs_circle('circle', .6, .6)
+def defaultCircle(w=.6):
+    circle = nurbs_circle('circle', w, w)
     circle.hide = True
     return circle
 
@@ -180,4 +184,36 @@ def example3():
     defaultCircle()
     make_braid('Braid', 4, length=3, xm=1, zm=.2, ym=1, taper=True, bevel='circle', circle=True)
 
-example1()
+def braid_bracelet(sides=7, order=3, bevel='circle', pointy=False, **kwds):
+    length = sides * 2
+    strand = tuple(braid_strand(length, order, 0, **kwds))
+    strand = tuple(circlify(strand, circles=order, gap = 0))
+    type = {True: 'POLY', False: 'NURBS'}[pointy]
+    if not pointy:
+        strand = strand[:-1]
+    else:
+        strand = (strand[-1],) + strand
+    MakePolyLine('Braid', 'Braid_c', strand, bevel=bevel, join=True, type=type)
+
+
+def example4():
+    '''One continuous strand bracelet'''
+    clear()
+    defaultCircle()
+    braid_bracelet(sides=13, order=3, xm=1, zm=.3, ym=1)
+
+def example5():
+    '''Pointy Star bracelet'''
+    clear()
+    defaultStar()
+    braid_bracelet(sides=5, order=3, xm=1, zm=1.3, ym=1, bevel='star', resolution=1, pointy=True)
+
+
+def example6():
+    '''Ring'''
+    clear()
+    defaultCircle()
+    defaultStar()
+    braid_bracelet(sides=16, order=3, xm=1, zm=.4, ym=.5, bevel='circle', resolution=1, pointy=False)
+
+example6()
