@@ -100,12 +100,15 @@ def braid_strand(length, strands, strandnum, width=1, x0=0, y0=None, ym=.5, xm=1
 
 
 
-def make_braid(name, strands=3, length=5, bevel='circle', **kwds):
+def make_braid(name, strands=3, length=5, bevel='circle', circle=False, **kwds):
     '''Make a braid object'''
     lines = []
     for i in range(strands):
-        lines.append(tuple(braid_strand(length, strands, i, **kwds)))
-    return poly_lines(name, name + '_curve', lines, bevel, False)
+        strand = tuple(braid_strand(length, strands, i, **kwds))
+        if circle:
+            strand = tuple(circlify(strand))
+        lines.append(strand)
+    return poly_lines(name, name + '_curve', lines, bevel, circle)
 
 # 3-5: 2
 # 6 :  1
@@ -130,12 +133,51 @@ def star_pts(r=1, ir=None, points=5, center = (0, 0)):
         pts.append(angle_point(center, ti, ir))
     return map(zzero, pts)
 
-clear()
-circle = nurbs_circle('circle', 1, 1)
-circle.hide = True
 
-star = MakePolyLine('star', 'staz', tuple(star_pts(points=5, r=.5, ir=.05)), type='NURBS')
-star.hide = True
+def circlify(points, gap = None):
+    zavg = sum(p[2] for p in points) / len(points)
+    # yavg = sum(p[1] for p in points) / len(points)
+    x,y,z = points[0]
+    ylast = points[-1][1]
+    w = ylast - y
+    radius = w / 2 / pi
+    center = 0, 0
+    if gap is None:
+        gap = w / len(points)
+    for a,b,c in points:
+        down = (ylast - b) / (w + gap) * 2 * pi
+        r = radius + (c - zavg)
+        ny, nz = angle_point(center, down, r)
+        yield a, ny, nz
 
-# change bevel to "circle" 
-make_braid('Braid', 4, length=3, xm=1, zm=.5, ym=1, taper=True, bevel='star')
+def defaultCircle():
+    circle = nurbs_circle('circle', .6, .6)
+    circle.hide = True
+    return circle
+
+def defaultStar():
+    star = MakePolyLine('star', 'staz', tuple(star_pts(points=5, r=.5, ir=.05)), type='NURBS')
+    star.hide = True
+    return star
+
+def example1():
+    '''A 4 strand braid'''
+    clear()
+    defaultStar()
+    make_braid('Braid', 4, length=3, xm=1, zm=.5, ym=1, taper=True, bevel='star')
+
+def example2():
+    '''A tube wrapped into a band'''
+    clear()
+    defaultStar()
+    tube = [(0, y, 0) for y in range(-5, 5)]
+    otube = MakePolyLine('t', 't', tube, bevel='star')
+    otube = MakePolyLine('t', 't', list(circlify(tube)), bevel='star', join=True)
+
+def example3():
+    '''A braided bracelet'''
+    clear()
+    defaultCircle()
+    make_braid('Braid', 4, length=3, xm=1, zm=.2, ym=1, taper=True, bevel='circle', circle=True)
+
+example1()
