@@ -42,7 +42,7 @@ class Braid(Operator):
         circle = defaultCircle(self.strandsize)
         context.scene.objects.link(circle)
         braid = awesome_braid(self.strands, self.sides,
-                              bevel=circle,
+                              bevel=circle.name,
                               pointy=self.pointy,
                               radius=self.radius,
                               mr=self.thickness,
