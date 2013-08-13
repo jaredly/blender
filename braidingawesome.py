@@ -2,6 +2,7 @@ import bpy
 from mathutils import Vector 
 from math import sin, cos, pi 
 
+
 def clear():
     for obj in bpy.data.objects:
         if obj.type not in ('CAMERA', 'LAMP'):
@@ -13,12 +14,6 @@ def clear():
 def nurbs_circle(name, w, h):
     pts = [(-w/2, 0, 0), (0, -h/2, 0), (w/2, 0, 0), (0, h/2, 0)]
     return MakePolyLine(name, name + '_curve', pts)
-
-def angle_point(center, angle, distance):
-    cx, cy = center
-    x = cos(angle) * distance
-    y = sin(angle) * distance
-    return x + cx, y + cy
 
 def zzero(pos):
     return pos + (0,)
@@ -33,7 +28,7 @@ def poly_line(curve, points, join=True, type='NURBS'):
     if join:
         polyline.use_cyclic_u = True
 
-def poly_lines(objname, curvename, lines, bevel=None, joins=False):
+def poly_lines(objname, curvename, lines, bevel=None, joins=False, ctype='NURBS'):
     curve = bpy.data.curves.new(name=curvename, type='CURVE')
     curve.dimensions = '3D'
   
@@ -42,7 +37,7 @@ def poly_lines(objname, curvename, lines, bevel=None, joins=False):
     bpy.context.scene.objects.link(obj)
     
     for i, line in enumerate(lines):
-        poly_line(curve, line, joins if type(joins)==bool else joins[i])
+        poly_line(curve, line, joins if type(joins)==bool else joins[i], type=ctype)
     
     if bevel:
         curve.bevel_object = bpy.data.objects[bevel]
@@ -216,4 +211,102 @@ def example6():
     defaultStar()
     braid_bracelet(sides=16, order=3, xm=1, zm=.4, ym=.5, bevel='circle', resolution=1, pointy=False)
 
-example6()
+def braid_line4(center, radius, strands, sides, spacing=.4, thickness=.2, resolution=1):
+    cx, cy = center
+
+    numpoints = strands * (sides * 4) * resolution
+    dtheta = 2 * pi / (sides * resolution * 3)
+    steps = (strands - 1) * 2
+#    dz = dtheta * pi
+    
+    a = pi / steps
+    b = pi / 2
+    for i in range(0, numpoints - sides * strands):
+        i /= resolution
+        r = sin(b * i) * thickness
+        x, y = angle_point(center, i * dtheta, radius + r)
+        #x = r
+        #y = i/3
+        z = cos(i * a)
+        yield x, y, z
+
+
+def braid_line3(center, radius, strands, sides, spacing=.4, thickness=.2, resolution=1):
+    cx, cy = center
+
+    numpoints = strands * (sides * strands) * resolution - (sides - strands - 1)
+    dtheta = 2 * pi / (sides * resolution * 8/strands)
+    steps = (strands - 1) * 2
+#    dz = dtheta * pi
+    
+    a = pi / steps
+    b = pi / 2
+    # 5 sides, 1
+    # 8 sides, 4
+    # 7 sides, 3
+    for i in range(0, int(numpoints)):
+        i /= resolution
+        r = sin(b * i) * thickness
+        x, y = angle_point(center, i * dtheta, radius + r)
+        #x = r
+        #y = i/3
+        z = cos(i * a)
+        yield x, y, z
+
+# 5
+def braid_line(center, radius, strands, sides, spacing=.4, thickness=.2, resolution=1):
+    cx, cy = center
+    # sides = 6
+    numpoints = strands * (sides * strands + 1) * resolution / 2 - 6
+    dtheta = 2 * pi / (sides * resolution * 12/5)
+    steps = (strands - 1) * 2
+#    dz = dtheta * pi
+    
+    a = pi / steps
+    b = pi / 2
+    # 5 sides, 1
+    # 8 sides, 4
+    # 7 sides, 3
+    for i in range(0, int(numpoints)):
+        i /= resolution
+        r = sin(b * i) * thickness
+        x, y = angle_point(center, i * dtheta, radius + r)
+        #x = r
+        #y = i/3
+        z = cos(i * a) * spacing
+        yield x, y, z
+
+
+def real_braid(strands=3, sides=5, bevel='circle', pointy=False, **kwds):
+    line = tuple(braid_line((0, 0), 2, strands, sides, **kwds))
+    type = {True: 'POLY', False: 'NURBS'}[pointy]
+    MakePolyLine('Braid', 'Braid_c', line, bevel=bevel, join=True, type=type)
+
+def example7():
+    '''Ring'''
+    clear()
+    defaultCircle(.4)
+    defaultStar()
+    real_braid(strands=5, sides=8, thickness=.4, spacing=.4)
+
+
+import sys
+sys.path.append('/Users/jared/clone/blender')
+import imp
+import braid
+from braid import angle_point
+imp.reload(braid)
+def awesome_braid(strands=3, sides=5, bevel='circle', pointy=False, **kwds):
+    lines = braid.strands(strands, sides, **kwds)
+    type = {True: 'POLY', False: 'NURBS'}[pointy]
+    # MakePolyLine('Braid', 'Braid_c', line, bevel=bevel, join=True, type=type)
+    poly_lines('ABraid', 'ABraid_c', lines, bevel=bevel, joins=True, ctype=type)
+
+def example8():
+    '''Good solid ring'''
+    clear()
+    defaultCircle(.4)
+    defaultStar()
+    awesome_braid()
+
+example8()
