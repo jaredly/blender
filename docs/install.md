@@ -7,9 +7,9 @@ Open blender, and in the file menu, click "user preferences"
 
 Click "Install from file".
 
-Find where you saved `AddBraid.zip` and select it.
-
 ![step2](step2.png?raw)
+
+Find where you saved `AddBraid.zip` and select it.
 
 You should be able to find the plugin now. Click the checkbox to enable it.
 
