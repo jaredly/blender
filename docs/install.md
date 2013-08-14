@@ -1,7 +1,7 @@
 # How to install
 First, download the plugin's zip file from [the page on blender.org](https://projects.blender.org/tracker/index.php?func=detail&aid=36460&group_id=153&atid=467). It's under the "attachments" tab.
 
-In the file menu, click "user preferences"
+Open blender, and in the file menu, click "user preferences"
 
 ![step1](step1.png?raw)
 
