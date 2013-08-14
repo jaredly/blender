@@ -1,9 +1,13 @@
-blender
-=======
-
-My blender scripts
+# blender plugins and fun
 
 So far I'm experimenting with braids in blender.
+
+## Braid Plugin
+
+[See install information here](docs/install.md)
+
+## Using the script
+This is for the hackers among you that want to mess with the code. **Note:** this script is an older version (than the above plugin), and the braids it makes aren't as good. But it should be useful for learning some things about scripting in blender.
 
 How To:
 
